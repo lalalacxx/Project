@@ -3,13 +3,13 @@
 #include<arpa/inet.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
+#include<netinet/ip.h>
 #include<netinet/ip_icmp.h>
 #include<netdb.h>
 
 #include<stdlib.h>
 #include<string.h>
 #include <stdio.h>
-
 #define DATA_LEN 56 
 
 int sendnum = 0;//发送数据包的编号
@@ -58,6 +58,7 @@ int pack(int num,pid_t pid)
     picmp->icmp_id = pid;
     picmp->icmp_seq = htons(num);
     gettimeofday((struct timeval*)(picmp->icmp_data),NULL);//data的起始地址
+    picmp->icmp_cksum = chksum((unsigned short*)sendbuf,DATA_LEN+8);
     return DATA_LEN+8;
 }
 //发送数据包
@@ -67,11 +68,37 @@ int pack(int num,pid_t pid)
 void send_packet(int sfd,pid_t pid,struct sockaddr_in addr)
 {
     sendnum++;
+    memset(sendbuf,0x00,sizeof(sendbuf));
     int r = pack(sendnum,pid);
 
     sendto(sfd,sendbuf,r,0,(struct sockaddr*)&addr,sizeof(addr));
 }
-void recv_packet(int sfd,pid_t pid);
+
+void unpack(int num,pid_t pid,struct sockaddr_in from)
+{
+    struct timeval end;
+    gettimeofday(&end,NULL);
+    struct ip *pip = (struct ip*)recvbuf;
+    struct icmp *picmp = (struct icmp*)(recvbuf+(pip->ip_hl<<2));
+    float d = diftime(&end,(struct timeval*)picmp->icmp_data);
+
+    printf("%d bytes from %s:icmp_seg=%d ttl=%d time=%.4f ms\n",\
+           DATA_LEN+8,\
+           inet_ntoa(from.sin_addr),\
+           ntohs(picmp->icmp_seq),\
+           pip->ip_ttl,d);
+
+}
+//接受数据包
+void recv_packet(int sfd,pid_t pid)
+{
+    struct sockaddr_in from;
+    socklen_t len = sizeof(from);
+    memset(recvbuf,0x00,sizeof(recvbuf));
+    recvnum++;
+    recvfrom(sfd,recvbuf,1024,0,(struct sockaddr*)&from,&len);
+    unpack(recvnum,pid,from);
+}
 int main(int argc,char *argv[])
 {
     if(argc != 2)
@@ -79,8 +106,8 @@ int main(int argc,char *argv[])
         fprintf(stderr,"usage:./ping ip/域名\n");
         exit(1);
     }
-    struct sockaddr_in addr;
-    struct hostent *phost;
+    struct sockaddr_in addr = {};
+    struct hostent *phost = NULL;
     addr.sin_addr.s_addr = inet_addr(argv[1]);
     if(addr.sin_addr.s_addr == INADDR_NONE)//ip解析出错
     {
@@ -94,7 +121,7 @@ int main(int argc,char *argv[])
         memcpy((void*)&addr.sin_addr,phost->h_addr,phost->h_length); 
     }
     printf("PING %s(%s) %d bytes of data.\n",argv[1],inet_ntoa(addr.sin_addr),DATA_LEN);
-    
+    addr.sin_family = AF_INET;
     int sfd = socket(AF_INET,SOCK_RAW,IPPROTO_ICMP);
     if(sfd == -1)
     {
