@@ -1,13 +1,13 @@
 #pragma once
 #include<queue>
-
+#include<stdio.h>
 template<class W>
 struct HuffmanTreeNode
 {
 	HuffmanTreeNode<W>* _left;
 	HuffmanTreeNode<W>* _right;
 	HuffmanTreeNode<W>* _parent;
-	W _w; // Ȩֵ
+	W _w; // 权值
 
 	HuffmanTreeNode(const W& w)
 		:_w(w)
