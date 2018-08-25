@@ -62,17 +62,18 @@ public:
 		GetHuffmanCode(t.GetRoot());
 
 		// 4.压缩
-		string compressfile = file;
+        std::string compressfile = file;
 		compressfile += ".huffman";
-		ofstream ofs(compressfile.c_str());
+        std::ofstream ofs(compressfile.c_str());
 
 		ifs.clear();
+        //回到文件某一处，这里的0就表示回到文件的最开始
 		ifs.seekg(0);
 		char value = 0;
 		int pos = 0;
 		while (ifs >> ch)
 		{
-			string& code = _infos[ch]._code;
+            std::string& code = _infos[ch]._code;
 			for (size_t i = 0; i < code.size(); ++i)
 			{
 				if (code[i] == '1')
@@ -104,10 +105,10 @@ public:
 		if (root == NULL)
 			return;
 
-		if (root->_left == NULL
-			&& root->_right == NULL)
+		if (root->_left == NULL && root->_right == NULL)
 		{
-			string& code = _infos[root->_w._ch]._code;
+            //走到这里就说明走到了某一个叶子节点
+            std::string& code = _infos[root->_w._ch]._code;
 			Node* cur = root;
 			Node* parent = cur->_parent;
 			while (parent)
@@ -116,7 +117,7 @@ public:
 					code += '0';
 				else
 					code += '1';
-
+                //倒着走
 				cur = parent;
 				parent = parent->_parent;
 			}
