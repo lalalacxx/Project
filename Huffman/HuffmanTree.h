@@ -33,7 +33,7 @@ public:
 	HuffmanTree(W* a, size_t n, const W& invalid)
 		:_root(NULL)
 	{
-		priority_queue<Node*, vector<Node*>, NodeCompare> minheap;
+        std::priority_queue<Node*, std::vector<Node*>, NodeCompare> minheap;
 		for (size_t i = 0; i < n; ++i)
 		{
 			if (a[i] != invalid)
