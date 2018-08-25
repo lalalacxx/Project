@@ -2,7 +2,7 @@
 #include<fstream>
 #include<string>
 #include<algorithm>
-#include "Huffmantree.h"
+#include "HuffmanTree.h"
 
 typedef long long LongType;
 struct CharInfo
